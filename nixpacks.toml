@@ -1,5 +1,0 @@
-[phases.setup]
-aptPkgs = ["libgssapi-krb5-2"]
-
-[start]
-cmd = "cd src/TodoTasks.API && dotnet TodoTasks.API.dll"

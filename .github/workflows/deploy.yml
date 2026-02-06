@@ -63,7 +63,6 @@ jobs:
       # STEP 5: Publish as self-contained deployment
       # ========================================================================
       # Creates a standalone executable with .NET runtime included
-      # This is the KEY step - bundles everything Railway needs to run your app
       - name: Publish self-contained application
         run: |
           dotnet publish src/TodoTasks.API/TodoTasks.API.csproj \
@@ -72,40 +71,21 @@ jobs:
             --self-contained true \
             --runtime linux-x64 \
             /p:PublishSingleFile=false
-        # Explanation of flags:
-        # --configuration Release: Production-ready build
-        # --output ./publish: Put compiled files in 'publish' folder
-        # --self-contained true: Include .NET runtime (Railway doesn't need .NET installed!)
-        # --runtime linux-x64: Target Linux 64-bit (Railway uses Linux servers)
-        # /p:PublishSingleFile=false: Keep files separate (better for Railway)
       
       # ========================================================================
       # STEP 6: Create a simple Dockerfile for Railway
       # ========================================================================
       # Railway needs a Dockerfile to know how to run your app
-      # We create a minimal one that just runs the compiled executable
       - name: Create Railway Dockerfile
         run: |
           cat > ./publish/Dockerfile << 'EOF'
-          # Use minimal base image (only OS dependencies, no .NET needed)
-          FROM mcr.microsoft.com/dotnet/runtime-deps:10.0
-          
-          # Set working directory inside container
+          FROM mcr.microsoft.com/dotnet/runtime-deps:8.0
           WORKDIR /app
-          
-          # Copy all compiled files into container
           COPY . .
-          
-          # Make the executable file runnable
           RUN chmod +x TodoTasks.API
-          
-          # Tell Railway which port to use (Railway provides $PORT variable)
           ENV ASPNETCORE_URLS=http://+:$PORT
-          
-          # Run the application (native executable, not 'dotnet' command)
           ENTRYPOINT ["./TodoTasks.API"]
           EOF
-        # 'cat > file << EOF' creates a new file with the content between EOF markers
       
       # ========================================================================
       # STEP 7: Install Railway CLI
