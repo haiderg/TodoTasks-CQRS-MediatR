@@ -2,6 +2,12 @@
 
 A production-ready **ASP.NET Core 10** Web API showcasing enterprise architecture patterns with **MediatR CQRS** implementation, demonstrating advanced architectural practices for scalable task management systems.
 
+## 🌐 Live Demo
+
+**Swagger UI:** [https://todotasks-cqrs-mediatr-production.up.railway.app/swagger/index.html](https://todotasks-cqrs-mediatr-production.up.railway.app/swagger/index.html)
+
+**API Base URL:** `https://todotasks-cqrs-mediatr-production.up.railway.app/api`
+
 ## 🏗️ Architecture
 
 **Clean Architecture** with **CQRS Pattern** via MediatR:
