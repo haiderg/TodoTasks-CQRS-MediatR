@@ -1,0 +1,156 @@
+# ============================================================================
+# GitHub Actions CI/CD Workflow for .NET 10 Application
+# ============================================================================
+# This file automates building and deploying your app to Railway
+# Every time you push code to the 'main' branch, this workflow runs automatically
+# ============================================================================
+
+name: Deploy to Railway
+
+# WHEN does this workflow run?
+# Trigger: Whenever code is pushed to the 'main' branch
+on:
+  push:
+    branches:
+      - main  # Change this if your default branch is 'master' instead of 'main'
+
+# WHAT jobs should run?
+jobs:
+  # Job 1: Build and Deploy
+  build-and-deploy:
+    # WHERE does this job run?
+    # Uses Ubuntu Linux (latest version) - it's free and fast
+    runs-on: ubuntu-latest
+    
+    # STEPS: What actions to perform (runs in order, top to bottom)
+    steps:
+      # ========================================================================
+      # STEP 1: Get your code from GitHub
+      # ========================================================================
+      # This downloads your repository code so GitHub Actions can work with it
+      - name: Checkout code
+        uses: actions/checkout@v4  # Official GitHub action to clone your repo
+      
+      # ========================================================================
+      # STEP 2: Install .NET 10 SDK
+      # ========================================================================
+      # GitHub Actions doesn't have .NET 10 by default, so we install it
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4  # Official Microsoft action
+        with:
+          dotnet-version: '10.0.x'  # 'x' means "latest 10.0 version"
+          # This installs the preview version of .NET 10
+      
+      # ========================================================================
+      # STEP 3: Restore NuGet packages (dependencies)
+      # ========================================================================
+      # Downloads all the libraries your project needs (like MediatR, EF Core, etc.)
+      - name: Restore dependencies
+        run: dotnet restore src/TodoTasks.API/TodoTasks.API.csproj
+        # 'run:' executes a command in the terminal
+        # This is like running the command on your local machine
+      
+      # ========================================================================
+      # STEP 4: Build the application
+      # ========================================================================
+      # Compiles your C# code to check for errors
+      - name: Build application
+        run: dotnet build src/TodoTasks.API/TodoTasks.API.csproj --configuration Release --no-restore
+        # --configuration Release: Optimized for production (faster, smaller)
+        # --no-restore: Skip restore since we already did it in Step 3
+      
+      # ========================================================================
+      # STEP 5: Publish as self-contained deployment
+      # ========================================================================
+      # Creates a standalone executable with .NET runtime included
+      # This is the KEY step - bundles everything Railway needs to run your app
+      - name: Publish self-contained application
+        run: |
+          dotnet publish src/TodoTasks.API/TodoTasks.API.csproj \
+            --configuration Release \
+            --output ./publish \
+            --self-contained true \
+            --runtime linux-x64 \
+            /p:PublishSingleFile=false
+        # Explanation of flags:
+        # --configuration Release: Production-ready build
+        # --output ./publish: Put compiled files in 'publish' folder
+        # --self-contained true: Include .NET runtime (Railway doesn't need .NET installed!)
+        # --runtime linux-x64: Target Linux 64-bit (Railway uses Linux servers)
+        # /p:PublishSingleFile=false: Keep files separate (better for Railway)
+      
+      # ========================================================================
+      # STEP 6: Create a simple Dockerfile for Railway
+      # ========================================================================
+      # Railway needs a Dockerfile to know how to run your app
+      # We create a minimal one that just runs the compiled executable
+      - name: Create Railway Dockerfile
+        run: |
+          cat > ./publish/Dockerfile << 'EOF'
+          # Use minimal base image (only OS dependencies, no .NET needed)
+          FROM mcr.microsoft.com/dotnet/runtime-deps:10.0
+          
+          # Set working directory inside container
+          WORKDIR /app
+          
+          # Copy all compiled files into container
+          COPY . .
+          
+          # Make the executable file runnable
+          RUN chmod +x TodoTasks.API
+          
+          # Tell Railway which port to use (Railway provides $PORT variable)
+          ENV ASPNETCORE_URLS=http://+:$PORT
+          
+          # Run the application (native executable, not 'dotnet' command)
+          ENTRYPOINT ["./TodoTasks.API"]
+          EOF
+        # 'cat > file << EOF' creates a new file with the content between EOF markers
+      
+      # ========================================================================
+      # STEP 7: Install Railway CLI
+      # ========================================================================
+      # Railway CLI is needed to deploy from GitHub Actions
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+        # Installs Railway's command-line tool globally
+      
+      # ========================================================================
+      # STEP 8: Deploy to Railway
+      # ========================================================================
+      # Uses Railway CLI to deploy the compiled application
+      - name: Deploy to Railway
+        run: |
+          cd ./publish
+          railway up --service ${{ secrets.RAILWAY_SERVICE_ID }}
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        # Environment variable RAILWAY_TOKEN authenticates with Railway
+        # railway up: Deploys the current directory to Railway
+        # Railway will auto-detect the service from the linked project
+
+# ============================================================================
+# SETUP INSTRUCTIONS (One-time setup):
+# ============================================================================
+# 1. Go to your GitHub repository
+# 2. Click "Settings" → "Secrets and variables" → "Actions"
+# 3. Click "New repository secret"
+# 4. Add two secrets:
+#    - Name: RAILWAY_TOKEN
+#      Value: (Get from Railway Dashboard → Account Settings → Tokens)
+#    - Name: RAILWAY_SERVICE_NAME
+#      Value: (Your Railway service name, e.g., "todotasks-api")
+# 5. Push this file to GitHub
+# 6. Done! Every push to 'main' will auto-deploy to Railway
+# ============================================================================
+
+# ============================================================================
+# HOW TO USE:
+# ============================================================================
+# 1. Make changes to your code
+# 2. git add .
+# 3. git commit -m "Your message"
+# 4. git push origin main
+# 5. Go to GitHub → Actions tab → Watch it build and deploy automatically!
+# 6. Check Railway dashboard to see your app go live
+# ============================================================================
