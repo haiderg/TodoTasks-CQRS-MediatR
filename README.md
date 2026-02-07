@@ -39,6 +39,7 @@ src/
 - **MediatR Pipeline Behaviors** for cross-cutting concerns (validation, logging)
 - **FluentValidation** integrated with MediatR validation behavior
 - **AutoMapper** for DTO mapping
+- **Serilog** for structured logging with file and console sinks
 - **JWT Authentication** for secure API access
 - **Entity Framework Core 10** with SQL Server or PostgreSQL
 - **Repository Pattern** for data access abstraction
@@ -53,6 +54,7 @@ src/
 - **MediatR 12.x** - CQRS pattern implementation
 - **FluentValidation** - Declarative validation rules
 - **AutoMapper** - Object-to-object mapping
+- **Serilog 8.x** - Structured logging framework
 - **Entity Framework Core 10** - ORM for data access
 - **SQL Server / PostgreSQL** - Database providers (switchable)
 - **JWT Bearer Authentication** - Secure token-based authentication
@@ -107,6 +109,11 @@ Features/TodoTask/Queries/
 ## 🔧 Technical Highlights
 
 ### MediatR Pipeline Behaviors
+**LoggingBehavior** - Automatically logs all command/query executions:
+- Logs request name and execution time
+- Captures exceptions with timing information
+- Provides performance monitoring
+
 **ValidationBehavior** - Automatically validates all commands/queries before execution:
 - Runs FluentValidation rules
 - Throws validation exceptions on failure
@@ -117,11 +124,26 @@ Features/TodoTask/Queries/
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(GetPagedTodoTasksQuery).Assembly);
+    cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
     cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTodoTaskCommandValidator).Assembly);
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 ```
+
+### Serilog Configuration
+Structured logging with multiple sinks:
+- **Console Sink** - Real-time log output during development
+- **File Sink** - Rolling daily log files in `logs/` directory
+- **Request Logging** - HTTP request/response logging middleware
+- **Performance Tracking** - Automatic timing for all MediatR requests
+
+**What gets logged:**
+- Request name (e.g., `GetPagedTodoTasksQuery`, `CreateTodoTaskCommand`)
+- Execution time in milliseconds
+- Success/failure status
+- Exception details with stack traces
+- Structured data for easy querying
 
 ### Clean Separation of Concerns
 - **Controllers** - Only handle HTTP concerns (routing, status codes)
@@ -249,16 +271,16 @@ Navigate to `/swagger` in development mode to explore endpoints and test with JW
 ## 📈 Implemented Features
 
 - ✅ **CQRS with MediatR** - Command/Query separation
-- ✅ **MediatR Pipeline Behaviors** - Validation and cross-cutting concerns
+- ✅ **MediatR Pipeline Behaviors** - Validation and logging cross-cutting concerns
 - ✅ **FluentValidation** - Declarative validation rules
 - ✅ **AutoMapper** - Object mapping
+- ✅ **Serilog** - Structured logging with file and console sinks
 - ✅ **Authentication & Authorization (JWT)** - Secure token-based auth
 - ✅ **Unit Tests** - Application and Domain layer coverage
 - ✅ **CI/CD Pipeline** - GitHub Actions automated deployment to Railway
 - [ ] Integration Tests
 - [ ] Docker containerization
 - [ ] Caching with Redis
-- [ ] Logging with Serilog
 - [ ] Health checks
 - [ ] Rate limiting
 - [ ] API versioning

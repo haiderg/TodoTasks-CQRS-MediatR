@@ -117,21 +117,6 @@ git push origin main
 
 ---
 
-## 🎓 Interview Talking Points
-
-When asked about CI/CD in interviews, you can say:
-
-> "I implemented a CI/CD pipeline using GitHub Actions that automatically builds my .NET 10 application with self-contained deployment and deploys it to Railway. Every push to the main branch triggers the workflow, which compiles the code, runs tests, creates a production-ready build, and deploys it automatically. This ensures consistent deployments and reduces manual errors."
-
-**Key terms to mention:**
-- Continuous Integration/Continuous Deployment
-- GitHub Actions workflows
-- Self-contained deployment
-- Automated testing and deployment
-- Infrastructure as Code (the workflow YAML file)
-
----
-
 ## 📚 Learn More
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
